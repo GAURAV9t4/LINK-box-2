@@ -1,0 +1,8 @@
+{
+  "name": " LINK BOX 2",
+  "description": "Curated all-in-one link directory and categorized group hub with instant search, direct browser launch, customized links, and Telegram-style collections.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
