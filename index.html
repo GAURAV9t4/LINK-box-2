@@ -11,6 +11,87 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Suppress Netlify Injected Badges and Drawers from overlapping UI -->
+    <style>
+      iframe[src*="netlify"],
+      iframe[title*="Netlify" i],
+      iframe[id*="netlify" i],
+      iframe[class*="netlify" i],
+      div[id*="netlify" i],
+      div[class*="netlify" i],
+      [data-netlify-badge],
+      [data-netlify],
+      #netlify-badge,
+      .netlify-badge,
+      netlify-drawer,
+      #netlify-drawer,
+      [aria-label*="Netlify" i],
+      [title*="Powered by Netlify" i] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        bottom: -9999px !important;
+        right: -9999px !important;
+        z-index: -99999 !important;
+      }
+    </style>
+
+    <script>
+      (function() {
+        // Auto-dismiss Netlify badge in local storage
+        try {
+          localStorage.setItem('netlify-badge-dismissed', 'true');
+          localStorage.setItem('netlify_badge_hidden', 'true');
+          localStorage.setItem('netlify-badge-hidden', 'true');
+          localStorage.setItem('ntl-badge-hidden', 'true');
+          localStorage.setItem('ntl-badge-dismissed', 'true');
+        } catch (e) {}
+
+        function removeNetlifyBadge() {
+          try {
+            var iframes = document.querySelectorAll('iframe');
+            iframes.forEach(function(ifr) {
+              var src = (ifr.src || '').toLowerCase();
+              var title = (ifr.title || '').toLowerCase();
+              var id = (ifr.id || '').toLowerCase();
+              var cls = (ifr.className || '').toString().toLowerCase();
+              if (src.indexOf('netlify') !== -1 || title.indexOf('netlify') !== -1 || id.indexOf('netlify') !== -1 || cls.indexOf('netlify') !== -1) {
+                ifr.style.setProperty('display', 'none', 'important');
+                ifr.remove();
+              }
+            });
+
+            var badElements = document.querySelectorAll('netlify-drawer, #netlify-drawer, #netlify-badge, .netlify-badge, [data-netlify-badge], [id*="netlify"], [class*="netlify"]');
+            badElements.forEach(function(el) {
+              if (!el.closest('#root')) {
+                el.style.setProperty('display', 'none', 'important');
+                el.remove();
+              }
+            });
+          } catch (err) {}
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', removeNetlifyBadge);
+        } else {
+          removeNetlifyBadge();
+        }
+        window.addEventListener('load', removeNetlifyBadge);
+
+        // Keep watch for dynamically injected elements
+        try {
+          var observer = new MutationObserver(function() {
+            removeNetlifyBadge();
+          });
+          observer.observe(document.documentElement, { childList: true, subtree: true });
+        } catch (err) {}
+      })();
+    </script>
   </head>
   <body class="bg-[#0b0c16] text-[#e2e8f0] antialiased selection:bg-purple-600 selection:text-white min-h-screen">
     <div id="root"></div>
