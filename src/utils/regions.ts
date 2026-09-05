@@ -220,3 +220,84 @@ export function getPrimaryLinkRegion(regions?: string[]): RegionInfo {
   return getRegionInfo('Global');
 }
 
+/**
+ * Determines whether a link's regions match the selected region code.
+ *
+ * Rules:
+ * - 'all': shows all regional links together (Global / All Regions).
+ * - 'India': shows strictly India / Deshi / Bharat links.
+ * - Any other specific country (USA, Japan, Korea, France, Germany, Spain, etc.):
+ *   shows strictly links matching that specific country or its recognized aliases.
+ * - A link must explicitly belong to the target country; having 'Global' does not include it in a specific country.
+ */
+export function isLinkMatchingRegion(linkRegions: string[] | undefined, selectedRegionCode: string): boolean {
+  if (!selectedRegionCode || selectedRegionCode === 'all' || selectedRegionCode.toLowerCase() === 'all') {
+    return true;
+  }
+
+  if (!linkRegions || linkRegions.length === 0) {
+    return false;
+  }
+
+  const target = selectedRegionCode.trim().toLowerCase();
+
+  // If explicitly selected 'Global'
+  if (target === 'global') {
+    return linkRegions.some((r) => r.trim().toLowerCase() === 'global');
+  }
+
+  return linkRegions.some((r) => {
+    const rc = r.trim().toLowerCase();
+    if (rc === target) return true;
+
+    // Region aliases
+    if (target === 'india') {
+      return rc === 'deshi' || rc === 'desi' || rc === 'bharat' || rc === 'ind';
+    }
+    if (target === 'usa') {
+      return rc === 'united states' || rc === 'america' || rc === 'us' || rc === 'western' || rc === 'west';
+    }
+    if (target === 'korea' || target === 'south korea') {
+      return rc === 'korea' || rc === 'south korea' || rc === 'kor' || rc === 'kr';
+    }
+    if (target === 'japan') {
+      return rc === 'jpn' || rc === 'jp';
+    }
+    if (target === 'uk') {
+      return rc === 'united kingdom' || rc === 'britain' || rc === 'gb';
+    }
+    if (target === 'france') {
+      return rc === 'fra' || rc === 'fr';
+    }
+    if (target === 'germany') {
+      return rc === 'ger' || rc === 'de' || rc === 'deutschland';
+    }
+    if (target === 'spain') {
+      return rc === 'esp' || rc === 'es' || rc === 'espana';
+    }
+    if (target === 'italy') {
+      return rc === 'ita' || rc === 'it' || rc === 'italia';
+    }
+    if (target === 'brazil') {
+      return rc === 'brasil' || rc === 'bra' || rc === 'br';
+    }
+    if (target === 'russia') {
+      return rc === 'rus' || rc === 'ru';
+    }
+    if (target === 'poland') {
+      return rc === 'pol' || rc === 'pl' || rc === 'polska';
+    }
+    if (target === 'netherlands') {
+      return rc === 'nld' || rc === 'nl' || rc === 'holland';
+    }
+    if (target === 'portugal') {
+      return rc === 'prt' || rc === 'pt';
+    }
+    if (target === 'finland') {
+      return rc === 'fin' || rc === 'fi' || rc === 'suomi';
+    }
+
+    return false;
+  });
+}
+

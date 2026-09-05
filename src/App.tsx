@@ -24,7 +24,7 @@ import { Check, Star, AlertCircle, Plus, Sparkles } from 'lucide-react';
 import { matchLinkWithQuery, locateLinkOnPage } from './utils/search';
 import { deduplicateLinks } from './utils/dedup';
 import { migrateAllLinks } from './utils/dataMigration';
-import { REGIONS_MASTER } from './utils/regions';
+import { REGIONS_MASTER, isLinkMatchingRegion } from './utils/regions';
 import { getLinkBadges } from './utils/badgeManager';
 import { checkAndRunStartupAutoSync, getAutoSyncConfig } from './utils/autoDiscoveryEngine';
 
@@ -473,21 +473,13 @@ export default function App() {
     showToast(`Theme: ${themeCycle[nextIndex].toUpperCase()}`);
   };
 
-  // Active regional stats (Point 3: Dynamic Sites count, Category count, and Region count)
+  // Active regional stats (Dynamic Sites count, Category count, and Region count)
   const regionalScopeLinks = useMemo(() => {
     if (selectedRegion === 'all') return links;
-    const selClean = selectedRegion.trim().toLowerCase();
     return links.filter((l) => {
-      if (l.isCustom || (l.id && (l.id.startsWith('custom-') || l.id.startsWith('user-') || l.id.startsWith('vault-'))) || l.category === 'custom') return true;
-      if (!l.regions || l.regions.length === 0) return true;
-      return l.regions.some((r) => {
-        const rClean = r.trim().toLowerCase();
-        if (rClean === selClean || rClean === 'global' || rClean === 'worldwide' || rClean === 'all') return true;
-        if (selClean === 'usa' && (rClean === 'united states' || rClean === 'america' || rClean === 'us')) return true;
-        if ((selClean === 'korea' || selClean === 'south korea') && (rClean === 'korea' || rClean === 'south korea' || rClean === 'kor')) return true;
-        if (selClean === 'uk' && (rClean === 'united kingdom' || rClean === 'britain')) return true;
-        return false;
-      });
+      const isCustomUserLink = l.isCustom || (l.id && (l.id.startsWith('custom-') || l.id.startsWith('user-') || l.id.startsWith('vault-'))) || l.category === 'custom';
+      if (isCustomUserLink && (!l.regions || l.regions.length === 0)) return true;
+      return isLinkMatchingRegion(l.regions, selectedRegion);
     });
   }, [links, selectedRegion]);
 
@@ -504,7 +496,6 @@ export default function App() {
 
   // Filter and Sort Links
   const filteredLinks = useMemo(() => {
-    const selClean = selectedRegion.trim().toLowerCase();
     return links.filter((link) => {
       // 1. Enhanced Search Query (Title, URL, Custom URL/Title, Tags, Badges, Category)
       if (filters.searchQuery.trim()) {
@@ -522,22 +513,18 @@ export default function App() {
         }
       }
 
-      // 3. Region Filter (Strict filter by selected country when not 'all')
+      // 3. Region Filter:
+      // When a specific country is selected (e.g. India, USA, Japan, Korea, France, etc.):
+      // ONLY links that explicitly belong to that region are displayed.
+      // All regional links are shown together ONLY when 'all' (Global) is selected.
       if (selectedRegion !== 'all') {
         const isCustomUserLink = link.isCustom || link.category === 'custom' || (link.id && (link.id.startsWith('custom-') || link.id.startsWith('user-') || link.id.startsWith('vault-')));
-        // Custom user links are ALWAYS visible across all country tabs
-        if (!isCustomUserLink) {
-          if (!link.regions || link.regions.length === 0) return true;
-          const matchesRegion = link.regions.some((r) => {
-            const rClean = r.trim().toLowerCase();
-            if (rClean === selClean || rClean === 'global' || rClean === 'worldwide' || rClean === 'all') return true;
-            if ((selClean === 'india' || selClean === 'deshi') && (rClean === 'india' || rClean === 'deshi' || rClean === 'desi' || rClean === 'bharat')) return true;
-            if ((selClean === 'usa' || selClean === 'western') && (rClean === 'united states' || rClean === 'america' || rClean === 'us' || rClean === 'usa' || rClean === 'western' || rClean === 'west')) return true;
-            if ((selClean === 'korea' || selClean === 'south korea') && (rClean === 'korea' || rClean === 'south korea' || rClean === 'kor')) return true;
-            if (selClean === 'uk' && (rClean === 'united kingdom' || rClean === 'britain')) return true;
+        if (isCustomUserLink && (!link.regions || link.regions.length === 0)) {
+          // Custom user links without specific regional tags stay accessible
+        } else {
+          if (!isLinkMatchingRegion(link.regions, selectedRegion)) {
             return false;
-          });
-          if (!matchesRegion) return false;
+          }
         }
       }
 
@@ -644,24 +631,14 @@ export default function App() {
   // Cross-region & cross-filter intelligent locate handler
   const handleLocateLink = (link: LinkItem) => {
     // 1. Check if the link matches the currently active region
-    const selClean = selectedRegion.trim().toLowerCase();
-    let matchesRegion = selectedRegion === 'all';
-    if (!matchesRegion && link.regions && link.regions.length > 0) {
-      matchesRegion = link.regions.some((r) => {
-        const rClean = r.trim().toLowerCase();
-        if (rClean === selClean) return true;
-        if (selClean === 'usa' && (rClean === 'united states' || rClean === 'america' || rClean === 'us')) return true;
-        if ((selClean === 'korea' || selClean === 'south korea') && (rClean === 'korea' || rClean === 'south korea' || rClean === 'kor')) return true;
-        if (selClean === 'uk' && (rClean === 'united kingdom' || rClean === 'britain')) return true;
-        return false;
-      });
-    }
+    const matchesRegion = isLinkMatchingRegion(link.regions, selectedRegion);
 
     // Automatically switch region if link belongs to a different country
     if (!matchesRegion) {
-      if (link.regions && link.regions.length > 0 && link.regions[0] !== 'Global') {
-        setSelectedRegion(link.regions[0]);
-        showToast(`Switched region to ${link.regions[0]} to locate "${link.title}"`, 'info');
+      const targetRegion = (link.regions || []).find((r) => r.toLowerCase() !== 'global');
+      if (targetRegion) {
+        setSelectedRegion(targetRegion);
+        showToast(`Switched region to ${targetRegion} to locate "${link.title}"`, 'info');
       } else {
         setSelectedRegion('all');
         showToast(`Switched to Global region to locate "${link.title}"`, 'info');
@@ -771,7 +748,7 @@ export default function App() {
         {/* Popular Trends Widget using Recharts (Top 5 most clicked categories past 30 days) */}
         <PopularTrendsWidget
           categories={categories}
-          links={links}
+          links={regionalScopeLinks}
           selectedCategory={filters.selectedCategory}
           onSelectCategory={(catId) => setFilters((prev) => ({ ...prev, selectedCategory: catId }))}
           onOpenExportCSV={() => setIsExportAnalyticsOpen(true)}
@@ -780,7 +757,7 @@ export default function App() {
         {/* Search, Filter Tabs & View Mode Switcher */}
         <SearchAndFilters
           categories={categories}
-          links={links}
+          links={regionalScopeLinks}
           filters={filters}
           onFilterChange={(newFilters) => setFilters((prev) => ({ ...prev, ...newFilters }))}
           favoritesCount={favorites.length}
