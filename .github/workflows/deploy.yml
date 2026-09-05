@@ -1,4 +1,4 @@
-{
+on: 
   "name": "react-example",
   "version": "0.0.0",
   "lockfileVersion": 3,
@@ -35,3 +35,4 @@
     }
   }
 }
+
