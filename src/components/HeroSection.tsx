@@ -36,7 +36,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="w-full bg-gradient-to-r from-[#1a1334] via-[#241648] to-[#1a1334] border-b border-purple-900/60 px-4 py-2 text-center text-xs sm:text-sm text-purple-200 flex flex-wrap items-center justify-center gap-2 sm:gap-3 relative shadow-sm">
         <span className="flex items-center gap-1.5 font-medium">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>LinkBox को 100% Ad-Free रखने के लिए सपोर्ट करें ❤️ (UPI: <strong className="text-amber-300 font-mono">81gaurav94@axl</strong>)</span>
+          <span>LinkBox को 100% Ad-Free रखने के लिए सपोर्ट करें ❤️ (UPI: <strong className="text-amber-300 font-mono">81gauravbob@axl</strong>)</span>
         </span>
         <button
           type="button"
